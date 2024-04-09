@@ -1,0 +1,6 @@
+gdown
+langchain
+langchain-community
+sentence_transformers
+chromadb
+gpt4all
