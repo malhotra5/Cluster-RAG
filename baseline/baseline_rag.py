@@ -34,15 +34,15 @@ vector_db_links = {"miniLM": ["https://drive.google.com/drive/folders/1ovegQRv2G
 
 llama_prompt = "You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. Use one sentence maximum and keep the answer CONCISE. Keep the answer CONCISE.\nQuestion: {question} \nContext: {context} \nAnswer:"
 
-def download_vector_db(dbname):
-    print("Downloading and preparing vector databases")
-    for count, i in enumerate(vector_db_names[dbname]):
-        if not os.path.isdir(i):
-            gdown.download_folder(vector_db_links[dbname][count])
+# def download_vector_db(dbname):
+#     print("Downloading and preparing vector databases")
+#     for count, i in enumerate(vector_db_names[dbname]):
+#         if not os.path.isdir(i):
+#             gdown.download_folder(vector_db_links[dbname][count])
 
 
-def create_vector_db(dbname):
-    print("Preparing vectoring db")
+# def create_vector_db(dbname):
+#     print("Preparing vectoring db")
     
 
 
@@ -214,7 +214,7 @@ def main():
 
 
 
-    download_vector_db(vector_db)
+    # download_vector_db(vector_db)
     download_generation_model()
 
 
