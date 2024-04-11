@@ -2,14 +2,11 @@ import argparse
 import os
 import pickle as pkl
 from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.embeddings.sentence_transformer import (
-    SentenceTransformerEmbeddings,
-)
+import supported_models
 import shutil
 
 
-vector_dbs = ["llm_embed", "miniLM", "sfr_mistral", "gpt4all"]
+vector_dbs = supported_models.vector_dbs
 
 
 def createDB(persistantName, embeddingFunction, splits):
@@ -46,24 +43,7 @@ def create_vector_db(dbname, datapath, custom_name=None, overwrite=False, gpu=Tr
 
 
     print("Loading embedding model")
-    if dbname == "llm_embed":
-        if gpu:
-            model_kwargs = {"device": "cuda"}
-        else:
-            model_kwargs = {"device": "cpu"}
-        model_name = "BAAI/llm-embedder"
-        embedding_function = HuggingFaceEmbeddings(model_name=model_name, model_kwargs=model_kwargs)
-
-    elif dbname == "gpt4all":
-        from langchain_community.embeddings import GPT4AllEmbeddings
-        embedding_function = GPT4AllEmbeddings()
-
-    elif dbname == "miniLM":
-        embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-        
-    else:
-        raise ValueError("Current {} index type is not supported; please add to prepare_index.py".format(dbname))
-
+    embedding_function = supported_models.get_model(dbname, gpu)
     print("Creating db")
     createDB(index_path, embedding_function, all_splits)
 

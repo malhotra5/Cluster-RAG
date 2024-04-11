@@ -14,10 +14,14 @@ from ReRankRetriever import ReRankRetriever
 from langchain.retrievers import BM25Retriever, EnsembleRetriever
 import pickle as pkl
 from langchain.embeddings import HuggingFaceEmbeddings
+import supported_models
+from tqdm import tqdm
 
 
-stack_types = ["rerank", "zeroshot", "cluster", "hybrid", "context-filter"]
-vector_dbs = ["llm_embed", "miniLM", "sfr_mistral", "gpt4"]
+
+stack_types = ["rerank", "naive", "cluster", "hybrid", "context-filter"]
+# vector_dbs = ["llm_embed", "miniLM", "sfr_mistral", "gpt4"]
+vector_dbs = supported_models.vector_dbs
 re_ranker = ["colbert", "bge"]
 
 
@@ -41,9 +45,17 @@ llama_prompt = "You are an assistant for question-answering tasks. Use the follo
 #             gdown.download_folder(vector_db_links[dbname][count])
 
 
-# def create_vector_db(dbname):
-#     print("Preparing vectoring db")
+# def create_vector_db(dbname, gpu):
     
+
+
+
+def uniqify(filename):
+    count = 0
+    pathname = "generations/" + filename + "_{}.txt" 
+    while os.path.isfile(pathname.format(count)):
+        count += 1
+    return pathname.format(count)
 
 
 def download_generation_model():
@@ -58,60 +70,68 @@ def download_generation_model():
 def get_retriever(retriever_type, dbname, rerank_model=None):
     
     # Load vector stores with correct embedding models
-    vectorstores = []
-    for i in vector_db_names[dbname]:
-        if dbname == "miniLM":
-            embedding_function = SentenceTransformerEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    
+    if retriever_type == "naive":
+        embedding_function = supported_models.get_model(dbname, True)
+        store = Chroma(persist_directory=dbname, embedding_function=embedding_function)
+        return store.as_retriever()
+    
+    raise ValueError("Current {} stack type is not supported; please add".format(retriever_type))
 
 
-        if dbname == "llm_embed":
-            model_name = "BAAI/llm-embedder"
-            model_kwargs = {"device": "cuda"}
-            embedding_function = HuggingFaceEmbeddings(model_name=model_name, model_kwargs=model_kwargs)
+
+    # for i in vector_db_names[dbname]:
+    #     if dbname == "miniLM":
+    #         embedding_function = SentenceTransformerEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
+
+    #     if dbname == "llm_embed":
+    #         model_name = "BAAI/llm-embedder"
+    #         model_kwargs = {"device": "cuda"}
+    #         embedding_function = HuggingFaceEmbeddings(model_name=model_name, model_kwargs=model_kwargs)
         
         
         
-        store = Chroma(persist_directory=i, embedding_function=embedding_function)
+    #     store = Chroma(persist_directory=i, embedding_function=embedding_function)
         
-        print(i, model_name)
-        print(store.similarity_search("What is buggy?"))
-        vectorstores.append(store)
+    #     print(i, model_name)
+    #     print(store.similarity_search("What is buggy?"))
+    #     vectorstores.append(store)
 
 
 
     # Create retriever schemes using vectorstores
-    if retriever_type == "rerank":
-        # TODO: Pass appropriate rerank model here
-        model = SentenceTransformer('BAAI/bge-reranker-base')
-        return ReRankRetriever(vectorstore=vectorstores[0].as_retriever(), model=model)
+    # if retriever_type == "rerank":
+    #     # TODO: Pass appropriate rerank model here
+    #     model = SentenceTransformer('BAAI/bge-reranker-base')
+    #     return ReRankRetriever(vectorstore=vectorstores[0].as_retriever(), model=model)
 
     
-    if retriever_type == "hybrid":
-        retriever = vectorstores[0].as_retriever(search_kwargs={"k": 4})
-        if not os.path.isfile("all_splits.pkl"):
-            gdown.download("https://drive.google.com/file/d/1dx44bGE_F8o3YAW2zEvF2mf_Td75r2FF/view?usp=drive_link", "all_splits.pkl")
+    # if retriever_type == "hybrid":
+    #     retriever = vectorstores[0].as_retriever(search_kwargs={"k": 4})
+    #     if not os.path.isfile("all_splits.pkl"):
+    #         gdown.download("https://drive.google.com/file/d/1dx44bGE_F8o3YAW2zEvF2mf_Td75r2FF/view?usp=drive_link", "all_splits.pkl")
 
-        print("Setting up BM25")
-
-
-        with open('all_splits.pkl','rb') as f:
-            all_splits = pkl.load(f)
-
-        def flatten_extend(matrix):
-            flat_list = []
-            for row in matrix:
-                flat_list.extend(row)
-            return flat_list
+    #     print("Setting up BM25")
 
 
-        bm25_retriever = BM25Retriever.from_documents(flatten_extend(all_splits))
-        return EnsembleRetriever(retrievers=[bm25_retriever, retriever], weights=[0.5, 0.5])
+    #     with open('all_splits.pkl','rb') as f:
+    #         all_splits = pkl.load(f)
+
+    #     def flatten_extend(matrix):
+    #         flat_list = []
+    #         for row in matrix:
+    #             flat_list.extend(row)
+    #         return flat_list
+
+
+    #     bm25_retriever = BM25Retriever.from_documents(flatten_extend(all_splits))
+    #     return EnsembleRetriever(retrievers=[bm25_retriever, retriever], weights=[0.5, 0.5])
 
 
 
 def get_chain(retriever, llm,  custom_prompt=None):
     rag_prompt = hub.pull("rlm/rag-prompt")
-    # rag_prompt.messages
     if custom_prompt != None:
         prompt = HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['context', 'question'], template=custom_prompt))
         rag_prompt.messages = [prompt]
@@ -194,7 +214,7 @@ def main():
     args, unknown_args = parser.parse_known_args()
 
     model_type = args.model_type
-    vector_db = args.vector_db
+    vector_db = "indexes/" + args.vector_db
     rerank_model = args.rerank_model
     in_file = args.test_set_path
     out_file = args.system_out_path
@@ -240,9 +260,8 @@ def main():
     qa_chain = get_chain(retriever, llm,  custom_prompt=llama_prompt)
     questions = get_questions(in_file)
 
-    from tqdm import tqdm
-
-
+    
+    out_file = uniqify(out_file)
     f = open(out_file, "w")
     f.close()
 
