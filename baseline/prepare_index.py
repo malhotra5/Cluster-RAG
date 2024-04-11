@@ -99,7 +99,7 @@ def main():
 
     parser.add_argument(
         "--overwrite",
-        action="store_false",
+        action="store_true",
         help="Whether or not to overwrite existing index"
     )
 

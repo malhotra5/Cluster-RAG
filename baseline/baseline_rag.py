@@ -7,7 +7,7 @@ from langchain_core.runnables import RunnablePassthrough, RunnablePick
 from langchain_core.prompts.chat import HumanMessagePromptTemplate, PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.llms import LlamaCpp
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from ReRankRetriever import ReRankRetriever
