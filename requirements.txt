@@ -4,3 +4,6 @@ langchain-community
 sentence_transformers
 chromadb
 gpt4all
+llama-cpp-python
+langchainhub
+accelerate

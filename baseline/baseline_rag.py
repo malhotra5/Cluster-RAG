@@ -10,12 +10,18 @@ from langchain_community.llms import LlamaCpp
 # from sentence_transformers import SentenceTransformer
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings.sentence_transformer import SentenceTransformerEmbeddings
-from ReRankRetriever import ReRankRetriever
+# from ReRankRetriever import ReRankRetriever
 from langchain.retrievers import BM25Retriever, EnsembleRetriever
 import pickle as pkl
 from langchain.embeddings import HuggingFaceEmbeddings
 import supported_models
 from tqdm import tqdm
+import transformers
+from transformers import LlamaForCausalLM, LlamaTokenizer
+import torch
+from langchain.llms import HuggingFacePipeline
+
+
 
 
 
@@ -45,10 +51,6 @@ llama_prompt = "You are an assistant for question-answering tasks. Use the follo
 #             gdown.download_folder(vector_db_links[dbname][count])
 
 
-# def create_vector_db(dbname, gpu):
-    
-
-
 
 def uniqify(filename):
     count = 0
@@ -73,7 +75,7 @@ def get_retriever(retriever_type, dbname, rerank_model=None):
     
     if retriever_type == "naive":
         embedding_function = supported_models.get_model(dbname, True)
-        store = Chroma(persist_directory=dbname, embedding_function=embedding_function)
+        store = Chroma(persist_directory="indexes/" + dbname, embedding_function=embedding_function)
         return store.as_retriever()
     
     raise ValueError("Current {} stack type is not supported; please add".format(retriever_type))
@@ -189,7 +191,7 @@ def main():
     )
 
     parser.add_argument(
-        "--test_set_path",
+        "--questions_file",
         default=None,
         type=str,
         required=True,
@@ -200,7 +202,7 @@ def main():
         "--system_out_path",
         default=None,
         type=str,
-        required=True,
+        required=False,
         help="Path for storing system generated outputs",
     )
 
@@ -214,10 +216,12 @@ def main():
     args, unknown_args = parser.parse_known_args()
 
     model_type = args.model_type
-    vector_db = "indexes/" + args.vector_db
+    vector_db = args.vector_db
     rerank_model = args.rerank_model
-    in_file = args.test_set_path
+    in_file = "questions/" + args.questions_file
     out_file = args.system_out_path
+    if out_file == None:
+        out_file = args.questions_file
 
 
     if model_type not in stack_types:
@@ -233,9 +237,11 @@ def main():
         raise ValueError("Unknown arguments detected: {}. Expected one of {}".format(rerank_model, re_ranker))
 
 
+    vector_db = vector_db
+
 
     # download_vector_db(vector_db)
-    download_generation_model()
+    # download_generation_model()
 
 
 
@@ -250,6 +256,54 @@ def main():
         f16_kv=True, 
         verbose=True,
     )
+
+    # model_dir = "/data/models/huggingface/meta-llama/Llama-2-7b-chat-hf"
+    # device = f'cuda:{torch.cuda.current_device()}' if torch.cuda.is_available() else 'cpu'
+    # bnb_config = transformers.BitsAndBytesConfig(
+    #     load_in_4bit=True,
+    #     bnb_4bit_quant_type='nf4',
+    #     bnb_4bit_use_double_quant=True,
+    #     bnb_4bit_compute_dtype=torch.bfloat16
+    # )
+
+    # begin initializing HF items, you need an access token
+    # hf_auth = '<add your access token here>'
+    # model_config = transformers.AutoConfig.from_pretrained(
+    #     model_dir,
+    #     # use_auth_token=hf_auth
+    # )
+
+    # model = transformers.AutoModelForCausalLM.from_pretrained(
+    #     model_dir,
+    #     trust_remote_code=True,
+    #     config=model_config,
+    #     # quantization_config=bnb_config,
+    #     device_map='auto',
+    #     use_auth_token=hf_auth
+    # )
+    # model.eval()
+    
+    # tokenizer = transformers.AutoTokenizer.from_pretrained(
+    #     model_dir,
+    #     use_auth_token=hf_auth
+    # )
+
+    # generate_text = transformers.pipeline(
+    #     model=model, 
+    #     tokenizer=tokenizer,
+    #     return_full_text=True,  # langchain expects the full text
+    #     task='text-generation',
+    #     # we pass model parameters here too
+    #     # stopping_criteria=stopping_criteria,  # without this model rambles during chat
+    #     temperature=0.1,  # 'randomness' of outputs, 0.0 is the min and 1.0 the max
+    #     max_new_tokens=512,  # max number of tokens to generate in the output
+    #     repetition_penalty=1.1  # without this output begins repeating
+    # )
+
+    # llm = HuggingFacePipeline(pipeline=generate_text)
+
+
+
 
 
     retriever = get_retriever(model_type, vector_db)
