@@ -3,24 +3,20 @@ import gdown
 import os
 import urllib.request
 from langchain import hub
-from langchain_core.runnables import RunnablePassthrough, RunnablePick
+from langchain_core.runnables import RunnablePassthrough
 from langchain_core.prompts.chat import HumanMessagePromptTemplate, PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.llms import LlamaCpp
-# from sentence_transformers import SentenceTransformer
 from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings.sentence_transformer import SentenceTransformerEmbeddings
-# from ReRankRetriever import ReRankRetriever
-from langchain.retrievers import BM25Retriever, EnsembleRetriever
-import pickle as pkl
-from langchain.embeddings import HuggingFaceEmbeddings
+# from langchain_community.embeddings.sentence_transformer import SentenceTransformerEmbeddings
+from ReRankRetriever import ReRankRetriever
+from ColbertReRankRetriever import ColbertReRankRetriever
+
+# from langchain.retrievers import BM25Retriever, EnsembleRetriever
+# import pickle as pkl
+# from langchain.embeddings import HuggingFaceEmbeddings
 import supported_models
 from tqdm import tqdm
-import transformers
-from transformers import LlamaForCausalLM, LlamaTokenizer
-import torch
-from langchain.llms import HuggingFacePipeline
-
 
 
 
@@ -69,44 +65,29 @@ def download_generation_model():
 
 
 
-def get_retriever(retriever_type, dbname, rerank_model=None):
+def get_retriever(retriever_type, dbname, rerank_model="bge"):
     
     # Load vector stores with correct embedding models
     
+    embedding_function = supported_models.get_model(dbname, True)
+    store = Chroma(persist_directory="indexes/" + dbname, embedding_function=embedding_function)
+
     if retriever_type == "naive":
-        embedding_function = supported_models.get_model(dbname, True)
-        store = Chroma(persist_directory="indexes/" + dbname, embedding_function=embedding_function)
         return store.as_retriever()
     
+
+    if retriever_type == "rerank":
+        # TODO: Pass appropriate rerank model here
+        if rerank_model == "bge":
+            rerank_model = supported_models.get_rerank_model(rerank_model)
+            return ReRankRetriever(vectorstore=store.as_retriever(), model=rerank_model, rerank_num=40)
+        
+        if rerank_model == "colbert":
+            rerank_model = supported_models.get_rerank_model(rerank_model)
+            return ColbertReRankRetriever(vectorstore=store.as_retriever(), tokenizer=rerank_model[0], model=rerank_model[1], rerank_num=40)
+
+
     raise ValueError("Current {} stack type is not supported; please add".format(retriever_type))
-
-
-
-    # for i in vector_db_names[dbname]:
-    #     if dbname == "miniLM":
-    #         embedding_function = SentenceTransformerEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-
-
-    #     if dbname == "llm_embed":
-    #         model_name = "BAAI/llm-embedder"
-    #         model_kwargs = {"device": "cuda"}
-    #         embedding_function = HuggingFaceEmbeddings(model_name=model_name, model_kwargs=model_kwargs)
-        
-        
-        
-    #     store = Chroma(persist_directory=i, embedding_function=embedding_function)
-        
-    #     print(i, model_name)
-    #     print(store.similarity_search("What is buggy?"))
-    #     vectorstores.append(store)
-
-
-
-    # Create retriever schemes using vectorstores
-    # if retriever_type == "rerank":
-    #     # TODO: Pass appropriate rerank model here
-    #     model = SentenceTransformer('BAAI/bge-reranker-base')
-    #     return ReRankRetriever(vectorstore=vectorstores[0].as_retriever(), model=model)
 
     
     # if retriever_type == "hybrid":

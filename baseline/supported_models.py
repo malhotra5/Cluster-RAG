@@ -3,6 +3,9 @@ from langchain_community.embeddings import GPT4AllEmbeddings
 from langchain_community.embeddings.sentence_transformer import (
     SentenceTransformerEmbeddings,
 )        
+from sentence_transformers import SentenceTransformer
+from transformers import AutoTokenizer, AutoModel
+
 
 
 vector_dbs = ["llm_embed", "miniLM", "sfr_mistral", "gpt4all"]
@@ -27,6 +30,15 @@ def get_minilm():
     return SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
 
 
+def get_bge_rerank():
+    rerank_model = SentenceTransformer('BAAI/bge-reranker-base')
+    return rerank_model
+
+
+def get_colbert_rerank():
+    tokenizer = AutoTokenizer.from_pretrained("colbert-ir/colbertv2.0")
+    model = AutoModel.from_pretrained("colbert-ir/colbertv2.0")
+    return [tokenizer, model]
 
 def get_model(name, gpu=False):
     if name == "llm_embed":
@@ -37,8 +49,21 @@ def get_model(name, gpu=False):
 
     elif name == "miniLM":
         embedding_function = get_minilm()
-        
+
     else:
         raise ValueError("Current {} model type is not supported; please add to supported_models.py".format(name))
 
     return embedding_function
+
+
+def get_rerank_model(name):
+    if name == "bge":
+        model = get_bge_rerank()
+    
+    elif name == "colbert":
+        model = get_colbert_rerank() 
+
+    else:
+        raise ValueError("Current {} model is not supported for reranking; please add to supported_models.py".format(name))
+
+    return model
