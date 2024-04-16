@@ -13,9 +13,6 @@ class ColbertReRankRetriever(BaseRetriever):
 
     model : AutoModel
 
-    rerank_num : int
-
-
     def maxsim(query_embedding, document_embedding):
         expanded_query = query_embedding.unsqueeze(2)
         expanded_doc = document_embedding.unsqueeze(1)

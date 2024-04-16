@@ -9,11 +9,31 @@ import shutil
 vector_dbs = supported_models.vector_dbs
 
 
-def createDB(persistantName, embeddingFunction, splits):
-    for i in splits:
-        vectorstore = Chroma.from_documents(documents=i, embedding=embeddingFunction, persist_directory=persistantName)
+def createDB(persistantName, embeddingFunction, splits, cluster=False, group=None):
+    if not cluster:
+        for i in splits:
+            vectorstore = Chroma.from_documents(documents=i, embedding=embeddingFunction, persist_directory=persistantName)
 
-def create_vector_db(dbname, datapath, custom_name=None, overwrite=False, gpu=True):
+    else:
+        indexName = "{}_{}".format(persistantName)
+        for count, i in enumerate(splits):
+            all_documents = []
+            all_metadata = []
+            for j in i:
+                all_documents.append(j.page_content)
+                all_metadata.append(j.metadata)
+            
+            embeddingFunction.index(
+                collection=all_documents,
+                document_metadatas=all_metadata,
+                index_name=indexName.format(count),
+                max_document_length=500,
+                split_documents=False
+                )
+
+
+
+def create_vector_db(dbname, datapath, custom_name=None, overwrite=False, cluster=False, gpu=True):
 
     if not os.path.exists("indexes"):
         os.mkdir("indexes")
@@ -45,7 +65,7 @@ def create_vector_db(dbname, datapath, custom_name=None, overwrite=False, gpu=Tr
     print("Loading embedding model")
     embedding_function = supported_models.get_model(dbname, gpu)
     print("Creating db")
-    createDB(index_path, embedding_function, all_splits)
+    createDB(index_path, embedding_function, all_splits, cluster=cluster)
 
 
 
@@ -89,6 +109,12 @@ def main():
             help="Whether or not to use CUDA"
     )
 
+    parser.add_argument(
+        "--cluster",
+        action="store_true",
+        help="Whether or not to create Cluster-RAG index"
+    )
+
 
 
 
@@ -97,6 +123,7 @@ def main():
     data_path = args.data_path
     custom_name = args.custom_name
     overwrite = args.overwrite
+    cluster = args.cluster
     gpu = args.gpu
     
 
@@ -107,7 +134,7 @@ def main():
         raise ValueError("Invalid path to documents detected: {}".format(data_path))
 
 
-    create_vector_db(vector_db, data_path, custom_name=custom_name, overwrite=overwrite, gpu=gpu)
+    create_vector_db(vector_db, data_path, custom_name=custom_name, overwrite=overwrite, cluster=cluster, gpu=gpu)
 
     print("Finished creating dataset")
 

@@ -8,12 +8,10 @@ from langchain_core.prompts.chat import HumanMessagePromptTemplate, PromptTempla
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.llms import LlamaCpp
 from langchain_community.vectorstores import Chroma
-# from langchain_community.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from ReRankRetriever import ReRankRetriever
 from ColbertReRankRetriever import ColbertReRankRetriever
+from HydeRetriever import HydeRetriever
 
-# from langchain.retrievers import BM25Retriever, EnsembleRetriever
-# import pickle as pkl
 # from langchain.embeddings import HuggingFaceEmbeddings
 import supported_models
 from tqdm import tqdm
@@ -21,7 +19,7 @@ from tqdm import tqdm
 
 
 
-stack_types = ["rerank", "naive", "cluster", "hybrid", "context-filter"]
+stack_types = ["rerank", "naive", "cluster", "hyde", "context-filter"]
 # vector_dbs = ["llm_embed", "miniLM", "sfr_mistral", "gpt4"]
 vector_dbs = supported_models.vector_dbs
 re_ranker = ["colbert", "bge"]
@@ -65,7 +63,7 @@ def download_generation_model():
 
 
 
-def get_retriever(retriever_type, dbname, rerank_model="bge"):
+def get_retriever(retriever_type, dbname, llm, rerank_model="bge"):
     
     # Load vector stores with correct embedding models
     
@@ -75,6 +73,8 @@ def get_retriever(retriever_type, dbname, rerank_model="bge"):
     if retriever_type == "naive":
         return store.as_retriever()
     
+    if retriever_type == "hyde":
+        return HydeRetriever(vectorstore=store.as_retriever(), llm=llm)
 
     if retriever_type == "rerank":
         # TODO: Pass appropriate rerank model here
@@ -201,8 +201,7 @@ def main():
     rerank_model = args.rerank_model
     in_file = "questions/" + args.questions_file
     out_file = args.system_out_path
-    if out_file == None:
-        out_file = args.questions_file
+    
 
 
     if model_type not in stack_types:
@@ -218,11 +217,18 @@ def main():
         raise ValueError("Unknown arguments detected: {}. Expected one of {}".format(rerank_model, re_ranker))
 
 
-    vector_db = vector_db
+    if out_file == None:
+        out_file = args.questions_file
+
+    out_file = out_file.split(".txt")[0] + "_{}".format(model_type)
+    if rerank_model != None:
+        out_file = out_file + "_{}".format(rerank_model)
+
+
 
 
     # download_vector_db(vector_db)
-    # download_generation_model()
+    download_generation_model()
 
 
 
@@ -287,7 +293,7 @@ def main():
 
 
 
-    retriever = get_retriever(model_type, vector_db)
+    retriever = get_retriever(model_type, vector_db, llm)
     print("Running retiever test on query 'What is buggy?")
     print(retriever.get_relevant_documents("What is buggy?"))
 
@@ -295,6 +301,9 @@ def main():
     qa_chain = get_chain(retriever, llm,  custom_prompt=llama_prompt)
     questions = get_questions(in_file)
 
+    
+
+    
     
     out_file = uniqify(out_file)
     f = open(out_file, "w")

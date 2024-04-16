@@ -5,10 +5,10 @@ from langchain_community.embeddings.sentence_transformer import (
 )        
 from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer, AutoModel
+from ragatouille import RAGPretrainedModel
 
 
-
-vector_dbs = ["llm_embed", "miniLM", "sfr_mistral", "gpt4all"]
+vector_dbs = ["llm_embed", "miniLM", "sfr_mistral", "gpt4all", "colbert"]
 
 
 def get_llm_embed(gpu):
@@ -30,6 +30,11 @@ def get_minilm():
     return SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
 
 
+def get_colbert():
+    embedding_function = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
+    return embedding_function
+
+
 def get_bge_rerank():
     rerank_model = SentenceTransformer('BAAI/bge-reranker-base')
     return rerank_model
@@ -39,6 +44,7 @@ def get_colbert_rerank():
     tokenizer = AutoTokenizer.from_pretrained("colbert-ir/colbertv2.0")
     model = AutoModel.from_pretrained("colbert-ir/colbertv2.0")
     return [tokenizer, model]
+
 
 def get_model(name, gpu=False):
     if name == "llm_embed":
@@ -50,6 +56,8 @@ def get_model(name, gpu=False):
     elif name == "miniLM":
         embedding_function = get_minilm()
 
+    elif name == "colbert":
+        embedding_function = get_colbert()
     else:
         raise ValueError("Current {} model type is not supported; please add to supported_models.py".format(name))
 
