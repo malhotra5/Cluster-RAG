@@ -15,7 +15,7 @@ def createDB(persistantName, embeddingFunction, splits, cluster=False, group=Non
             vectorstore = Chroma.from_documents(documents=i, embedding=embeddingFunction, persist_directory=persistantName)
 
     else:
-        indexName = "{}_{}".format(persistantName)
+        indexName = "indexes/{}_{}"
         for count, i in enumerate(splits):
             all_documents = []
             all_metadata = []
@@ -26,9 +26,10 @@ def createDB(persistantName, embeddingFunction, splits, cluster=False, group=Non
             embeddingFunction.index(
                 collection=all_documents,
                 document_metadatas=all_metadata,
-                index_name=indexName.format(count),
+                index_name=indexName.format(persistantName, count),
                 max_document_length=500,
-                split_documents=False
+                split_documents=False,
+                use_faiss=True
                 )
 
 

@@ -32,6 +32,7 @@ def get_minilm():
 
 def get_colbert():
     embedding_function = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
+    # embedding_function = RAGPretrainedModel.from_pretrained("/scratch/rvmalhot/hf_cache/models/models--colbert-ir--colbertv2.0/snapshots/c1e84128e85ef755c096a95bdb06b47793b13acf/")
     return embedding_function
 
 
