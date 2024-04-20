@@ -20,30 +20,21 @@ def createDB(persistantName, embeddingFunction, splits, cluster=False, group=Non
 
     else:
         checkpoint = 'colbert-ir/colbertv2.0'
-        indexName = "indexes/{}_{}"
         for count, i in enumerate(splits):
             all_documents = []
             all_metadata = []
             for j in i:
                 all_documents.append(j.page_content)
                 all_metadata.append(j.metadata)
-            
-            # embeddingFunction.index(
-            #     collection=all_documents,
-            #     document_metadatas=all_metadata,
-            #     index_name=indexName.format(persistantName, count),
-            #     max_document_length=500,
-            #     split_documents=False,
-            #     use_faiss=True
-            #     )
+            if count == 0:
+                continue 
+            # if __name__ == "__main__":
+            with Run().context(RunConfig(nranks=1, experiment='notebook')):
+                config = ColBERTConfig(doc_maxlen=500, nbits=4, kmeans_niters=4) 
                 
-            if __name__ == "__main__":
-                with Run().context(RunConfig(nranks=1, experiment='notebook')):
-                    config = ColBERTConfig(doc_maxlen=500, nbits=4, kmeans_niters=4) 
-                                                                                                
-
-                    indexer = Indexer(checkpoint=checkpoint, config=config)
-                    indexer.index(name=indexName.format(persistantName, count), collection=all_documents, overwrite=True)
+                cluster_name = "{}/{}/cluster_{}/".format(os.getcwd(), persistantName, count)                                                           
+                indexer = Indexer(checkpoint=checkpoint, config=config)
+                indexer.index(name=cluster_name, collection=all_documents, overwrite=True)
 
 
 
@@ -129,6 +120,22 @@ def main():
         help="Whether or not to create Cluster-RAG index"
     )
 
+    parser.add_argument(
+        "--num_clusters",
+        default=2,
+        type=int,
+        required=False,
+        help="Number of clusters to create"
+    )
+
+    parser.add_argument(
+        "--groups",
+        default=None,
+        type=list,
+        required=False,
+        help="Grouping for clusters"
+    )
+
 
 
 
@@ -153,4 +160,5 @@ def main():
     print("Finished creating dataset")
 
 
-main()
+if __name__ == "__main__":
+    main()

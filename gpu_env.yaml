@@ -1,4 +1,4 @@
-name: colbert
+name: CRAG
 channels:
   - pytorch
   - nvidia
