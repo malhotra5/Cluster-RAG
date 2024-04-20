@@ -4,6 +4,10 @@ import pickle as pkl
 from langchain_community.vectorstores import Chroma
 import supported_models
 import shutil
+import sys
+sys.path.insert(0, '../ColBERT/')
+from colbert import Indexer
+from colbert.infra import Run, RunConfig, ColBERTConfig
 
 
 vector_dbs = supported_models.vector_dbs
@@ -15,6 +19,7 @@ def createDB(persistantName, embeddingFunction, splits, cluster=False, group=Non
             vectorstore = Chroma.from_documents(documents=i, embedding=embeddingFunction, persist_directory=persistantName)
 
     else:
+        checkpoint = 'colbert-ir/colbertv2.0'
         indexName = "indexes/{}_{}"
         for count, i in enumerate(splits):
             all_documents = []
@@ -23,14 +28,22 @@ def createDB(persistantName, embeddingFunction, splits, cluster=False, group=Non
                 all_documents.append(j.page_content)
                 all_metadata.append(j.metadata)
             
-            embeddingFunction.index(
-                collection=all_documents,
-                document_metadatas=all_metadata,
-                index_name=indexName.format(persistantName, count),
-                max_document_length=500,
-                split_documents=False,
-                use_faiss=True
-                )
+            # embeddingFunction.index(
+            #     collection=all_documents,
+            #     document_metadatas=all_metadata,
+            #     index_name=indexName.format(persistantName, count),
+            #     max_document_length=500,
+            #     split_documents=False,
+            #     use_faiss=True
+            #     )
+                
+            if __name__ == "__main__":
+                with Run().context(RunConfig(nranks=1, experiment='notebook')):
+                    config = ColBERTConfig(doc_maxlen=500, nbits=4, kmeans_niters=4) 
+                                                                                                
+
+                    indexer = Indexer(checkpoint=checkpoint, config=config)
+                    indexer.index(name=indexName.format(persistantName, count), collection=all_documents, overwrite=True)
 
 
 

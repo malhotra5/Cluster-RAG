@@ -7,4 +7,3 @@ gpt4all
 llama-cpp-python
 langchainhub
 accelerate
-ragatouille

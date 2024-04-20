@@ -5,7 +5,7 @@ from langchain_community.embeddings.sentence_transformer import (
 )        
 from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer, AutoModel
-from ragatouille import RAGPretrainedModel
+# from ragatouille import RAGPretrainedModel
 
 
 vector_dbs = ["llm_embed", "miniLM", "sfr_mistral", "gpt4all", "colbert"]
@@ -31,9 +31,9 @@ def get_minilm():
 
 
 def get_colbert():
-    embedding_function = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
+    # embedding_function = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
     # embedding_function = RAGPretrainedModel.from_pretrained("/scratch/rvmalhot/hf_cache/models/models--colbert-ir--colbertv2.0/snapshots/c1e84128e85ef755c096a95bdb06b47793b13acf/")
-    return embedding_function
+    return None
 
 
 def get_bge_rerank():
