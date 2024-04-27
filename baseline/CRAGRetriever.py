@@ -2,12 +2,17 @@ from langchain_core.retrievers import BaseRetriever, RetrieverLike
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from typing import List
+import sys
+sys.path.insert(0, '../ColBERT/')
+from colbert import Searcher
+from langchain.docstore.document import Document
+
 
 
 
 class CRAGRetriever(BaseRetriever):
 
-    vectorstore : List[RetrieverLike]
+    vectorstore : List[Searcher]
 
     def flatten_extend(self, matrix):
         flat_list = []
@@ -19,7 +24,11 @@ class CRAGRetriever(BaseRetriever):
 
         all_docs = []
         for i in self.vectorstore:
-            all_docs.append(i.get_relevant_documents(query, k=3))
+            res = i.search(query, k=2)
+            for passage_id, _, _ in zip(*res):
+                all_docs.append(i.collection[passage_id])
 
-        all_docs = self.flatten_extend(all_docs)
+
+        # all_docs = self.flatten_extend(all_docs)
+        all_docs = [Document(page_content=i) for i in all_docs]
         return all_docs

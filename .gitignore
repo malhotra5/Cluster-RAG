@@ -4,3 +4,4 @@ indexes/*
 *.ragatouille
 *experiments
 *ColBERT
+*unlimiformer

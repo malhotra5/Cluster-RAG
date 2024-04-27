@@ -1,0 +1,41 @@
+Human: <s>[INST] <<SYS>>
+You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. Use one sentence maximum and keep the answer CONCISE. Keep the answer CONCISE.
+<</SYS>>
+
+Question: What is required from students for the capstone project in the MSAII program? 
+Context: You must also complete a capstone project in which you work on a development project as part of the Core Curriculum. In total, you will complete 192 eligible units of study, including 84 units of Core Curriculum (including the 36-unit Capstone), 72 units of Knowledge Requirements and at least 36 units of approved Electives. For full requirements and program details, read the MSAII Handbook. Curriculum: The MSAII degree generally takes four semesters. Here's an example of how your coursework
+
+requirement. Participation is required unless waived in writing by the MIIS Program
+
+Director.
+
+3. Capstone requirements:  Students must complete a capstone project (36 units) and a
+
+capstone planning seminar (6 units). The capstone requirement gives students
+
+experience with collaborative, team -oriented software development; significant hands -
+
+on experience with the techniques studied in the classroom; and an opportunity to work on a large software application.
+
+MS students will be given access to the LTI’s comp uter cluster on an as-needed basis, to be used
+
+for course assignments, directed study projects, and/or the capstone project. The LTI cluster
+
+provides storage and computation for projects  involving large datasets and/or lengthy
+
+computation. 12
+
+10 Degree Requirements
+
+MSAII students are expected to complete their degr ee requirements within five consecutive semesters,
+
+capstone project goals, requirements, success metrics, and deliverables; and
+
+identifies and acquires data, software, and other resources required for successful
+
+completion of the project. The planning seminar must be completed in the semester prior to taking the capstone project.
+
+4.6 Registration Process/Procedures
+
+Students are responsible for registering for their courses. Use the Stellic Degree Audit 
+Answer: [/INST]  To fulfill the capstone project requirement in the Master of Science in Artificial Intelligence (MSAI) program, students must complete a capstone project (36 units) and a capstone planning seminar (6 units). The capstone project involves collaborative, team-oriented software development and provides hands-on experience with techniques studied in the classroom, while the capstone planning seminar prepares students to identify, acquire, and manage resources required for successful completion of the project.

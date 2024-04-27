@@ -1,0 +1,76 @@
+Human: You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. Use one sentence maximum and keep the answer CONCISE. Keep the answer CONCISE.
+Question: What is required from students for the capstone project in the MSAII program? 
+Context: You must also complete a capstone project in which you work on a development project as part of the Core Curriculum. In total, you will complete 192 eligible units of study, including 84 units of Core Curriculum (including the 36-unit Capstone), 72 units of Knowledge Requirements and at least 36 units of approved Electives. For full requirements and program details, read the MSAII Handbook. Curriculum: The MSAII degree generally takes four semesters. Here's an example of how your coursework
+
+requirement. Participation is required unless waived in writing by the MIIS Program
+
+Director.
+
+3. Capstone requirements:  Students must complete a capstone project (36 units) and a
+
+capstone planning seminar (6 units). The capstone requirement gives students
+
+experience with collaborative, team -oriented software development; significant hands -
+
+on experience with the techniques studied in the classroom; and an opportunity to work on a large software application.
+
+MS students will be given access to the LTI’s comp uter cluster on an as-needed basis, to be used
+
+for course assignments, directed study projects, and/or the capstone project. The LTI cluster
+
+provides storage and computation for projects  involving large datasets and/or lengthy
+
+computation. 12
+
+10 Degree Requirements
+
+MSAII students are expected to complete their degr ee requirements within five consecutive semesters,
+
+capstone project goals, requirements, success metrics, and deliverables; and
+
+identifies and acquires data, software, and other resources required for successful
+
+completion of the project. The planning seminar must be completed in the semester prior to taking the capstone project.
+
+4.6 Registration Process/Procedures
+
+Students are responsible for registering for their courses. Use the Stellic Degree Audit 
+Answer: To fulfill the capstone project requirements in the MSAII program, students must complete a capstone project (36 units) and a capstone planning seminar (6 units). The project goals, requirements, success metrics, and deliverables must be identified and acquired through the planning seminar, which should be completed in the semester prior to taking the capstone project.
+Human: You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. Use one sentence maximum and keep the answer CONCISE. Keep the answer CONCISE.
+Question: What was the purpose of the Andrew Project at CMU? 
+Context: 6. Andrew project, 1982 It was long the dream of computer scientists to put a workstation in every home and office, but no one had actually tried to accomplish it until researchers from Carnegie Mellon University and IBM launched the Andrew Project. Soon, every student, faculty member and employee had access to email, word processing, file-transfer services and graphics programs, and CMU was the most-wired campus in the world.
+
+The best-wired campus in the world Working with IBM in the early 1980s, the university and the Computer Science Department established another new research frontier: Development of a high-speed computer network that would reach virtually every room on campus, along with a GUI-based computing environment, and providing networked PCs or workstations for 7,000 students, faculty members and employees. Called the Andrew Project, it turned Carnegie Mellon into the best-connected, most-wired
+
+12. Java, 1991 As a CMU grad student, James Gosling (CS’83) worked on the Andrew project, which stressed interoperability between computers, whether they were Macs, IBMs or Unix machines. Those lessons served Gosling well when he developed Java, the first programming language able to run on almost any platform.
+
+equal access to their educational experience. The Office works to ensure that qualified individuals
+
+receive reasonable accommodations as guaranteed by the Americans with Disabilities Act (ADA)
+
+and Section 504 of the Rehabilitation Act of 1973. Students who would like to receive
+
+accommodations can begin the process through Disability Resources' secure online portal or
+
+email access@andrew.cmu.edu to begin the interactive accommodation Process. 
+Answer: The Andrew Project at CMU aimed to provide equal access to educational resources for all students, including those with disabilities, by establishing a high-speed computer network and providing networked PCs or workstations for 7,000 students, faculty members, and employees.
+Human: You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. Use one sentence maximum and keep the answer CONCISE. Keep the answer CONCISE.
+Question: Is Entropy the publication venue for 3D Semantic Segmentation in the Wild: Learning Generalized Models for Adverse-Condition Point Clouds 
+Context: Data augmentation. We study how data augmentation techniques affect generalized semantic segmentation of point clouds (3DSS) and compare them with the proposed PointDR. As Table 11 shows, we report seven models over the benchmark “SemanticKITTI→SemanticSTF”: 1) The Baseline is a source-only model that is trained by using the training data of Se- manticKITTI; 2) The drop-out, noise perturbation, flipping, and jittering are segmentation models with different augmen- tation techniques over input
+
+We also study SemanticSTF over a domain adaptive point cloud segmentation benchmark SemanticKITTI → SemanticSTF. Specifically, we select four representative UDA methods including ADDA [46], entropy minimiza- tion (Ent-Min) [47], self-training [65], and CoSMix [38] for adaptation from the source SemanticKITTI [2] to- ward the target SemanticSTF. Following the state-of-the- art [38, 50, 51] on synthetic-to-real adaptation, we adopt MinkowskiNet [7] as the segmentation backbone for all compared
+
+Paper title: '3D Semantic Segmentation in the Wild: Learning Generalized Models for Adverse-Condition Point Clouds' Published year: 2023 Publication venue: Computer Vision and Pattern Recognition Authors: Ruijie Ren, Jiaxing Huang, A. E. Saddik, Kangcheng Liu, Shijian Lu, Aoran Xiao, Eric P. Xing, Weihao Xuan, Dayan Guan Summary: This work introduces SemanticSTF, an adverse-weather point cloud dataset that provides dense point-level annotations and allows to study 3DSS under various adverse
+
+3 2 0 2
+
+r p A 3
+
+]
+
+V C . s c [
+
+1 v 0 9 6 0 0 . 4 0 3 2 : v i X r a
+
+3D Semantic Segmentation in the Wild: Learning Generalized Models for Adverse-Condition Point Clouds 
+Answer: No, Entropy is not the publication venue for 3D Semantic Segmentation in the Wild.

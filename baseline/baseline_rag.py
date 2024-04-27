@@ -11,11 +11,17 @@ from langchain_community.vectorstores import Chroma
 from ReRankRetriever import ReRankRetriever
 from ColbertReRankRetriever import ColbertReRankRetriever
 from HydeRetriever import HydeRetriever
-
-# from langchain.embeddings import HuggingFaceEmbeddings
+from CRAGRetriever import CRAGRetriever
 import supported_models
 from tqdm import tqdm
-
+import transformers
+from transformers import LogitsProcessor
+from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
+import torch
+import sys
+sys.path.insert(0, '../unlimiformer/src')
+from run_generation import unlimiform, generate
+# from colbert import Searcher
 
 
 
@@ -36,13 +42,37 @@ vector_db_links = {"miniLM": ["https://drive.google.com/drive/folders/1ovegQRv2G
                    "gpt4": ["https://drive.google.com/drive/folders/1aU072AN8_vxFXWZlqPCsXVn9TvOZ-Jq6?usp=drive_link"]}
 
 
-llama_prompt = "You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. Use one sentence maximum and keep the answer CONCISE. Keep the answer CONCISE.\nQuestion: {question} \nContext: {context} \nAnswer:"
+llama_prompt = "<s>[INST] <<SYS>>\nYou are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. Use one sentence maximum and keep the answer CONCISE. Keep the answer CONCISE.\n<</SYS>>\n\nQuestion: {question} \nContext: {context} \nAnswer: [/INST]"
 
 # def download_vector_db(dbname):
 #     print("Downloading and preparing vector databases")
 #     for count, i in enumerate(vector_db_names[dbname]):
 #         if not os.path.isdir(i):
 #             gdown.download_folder(vector_db_links[dbname][count])
+
+
+# class EosTokenRewardLogitsProcessor(LogitsProcessor):
+#   def __init__(self,  eos_token_id: int, max_length: int):
+    
+#         if not isinstance(eos_token_id, int) or eos_token_id < 0:
+#             raise ValueError(f"`eos_token_id` has to be a positive integer, but is {eos_token_id}")
+
+#         if not isinstance(max_length, int) or max_length < 1:
+#           raise ValueError(f"`max_length` has to be a integer bigger than 1, but is {max_length}")
+
+#         self.eos_token_id = eos_token_id
+#         self.max_length=max_length
+
+#   def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
+#     cur_len = input_ids.shape[-1]
+#     # start to increese the reward of the  eos_tokekn from 80% max length  progressively on length
+#     for cur_len in (max(0,int(self.max_length*0.8)), self.max_length ):
+#       ratio = cur_len/self.max_length
+#       num_tokens = scores.shape[1] # size of vocab
+#       scores[:, [i for i in range(num_tokens) if i != self.eos_token_id]] =\
+#       scores[:, [i for i in range(num_tokens) if i != self.eos_token_id]]*ratio*10*torch.exp(-torch.sign(scores[:, [i for i in range(num_tokens) if i != self.eos_token_id]]))
+#       scores[:, self.eos_token_id] = 1e2*ratio
+#     return scores
 
 
 
@@ -68,7 +98,11 @@ def get_retriever(retriever_type, dbname, llm, rerank_model="bge"):
     # Load vector stores with correct embedding models
     
     embedding_function = supported_models.get_model(dbname, True)
-    store = Chroma(persist_directory="indexes/" + dbname, embedding_function=embedding_function)
+
+    if retriever_type != "cluster":
+        store = Chroma(persist_directory="indexes/" + dbname, embedding_function=embedding_function)
+    else:
+        indexes = supported_models.get_cluster_model(dbname)
 
     if retriever_type == "naive":
         return store.as_retriever()
@@ -86,30 +120,10 @@ def get_retriever(retriever_type, dbname, llm, rerank_model="bge"):
             rerank_model = supported_models.get_rerank_model(rerank_model)
             return ColbertReRankRetriever(vectorstore=store.as_retriever(), tokenizer=rerank_model[0], model=rerank_model[1], rerank_num=40)
 
+    if retriever_type == "cluster":
+        return CRAGRetriever(vectorstore=indexes)
 
     raise ValueError("Current {} stack type is not supported; please add".format(retriever_type))
-
-    
-    # if retriever_type == "hybrid":
-    #     retriever = vectorstores[0].as_retriever(search_kwargs={"k": 4})
-    #     if not os.path.isfile("all_splits.pkl"):
-    #         gdown.download("https://drive.google.com/file/d/1dx44bGE_F8o3YAW2zEvF2mf_Td75r2FF/view?usp=drive_link", "all_splits.pkl")
-
-    #     print("Setting up BM25")
-
-
-    #     with open('all_splits.pkl','rb') as f:
-    #         all_splits = pkl.load(f)
-
-    #     def flatten_extend(matrix):
-    #         flat_list = []
-    #         for row in matrix:
-    #             flat_list.extend(row)
-    #         return flat_list
-
-
-    #     bm25_retriever = BM25Retriever.from_documents(flatten_extend(all_splits))
-    #     return EnsembleRetriever(retrievers=[bm25_retriever, retriever], weights=[0.5, 0.5])
 
 
 
@@ -194,6 +208,12 @@ def main():
         help="Whether or not to use CUDA"
     )
 
+    parser.add_argument(
+        "--use_unlimiform",
+        action="store_true",
+        help="Use for cluster when holding more than 2 clusters"
+    )
+
     args, unknown_args = parser.parse_known_args()
 
     model_type = args.model_type
@@ -201,6 +221,7 @@ def main():
     rerank_model = args.rerank_model
     in_file = "questions/" + args.questions_file
     out_file = args.system_out_path
+    use_unlimiform = args.use_unlimiform
     
 
 
@@ -228,67 +249,71 @@ def main():
 
 
     # download_vector_db(vector_db)
-    download_generation_model()
+    # download_generation_model()
 
 
 
-    n_gpu_layers = 32 
-    n_batch = 512 
+    # n_gpu_layers = 32 
+    # n_batch = 512 
 
-    llm = LlamaCpp(
-        model_path="llama-2-7b-chat.Q6_K.gguf",
-        n_gpu_layers=n_gpu_layers,
-        n_batch=n_batch,
-        n_ctx=2048,
-        f16_kv=True, 
-        verbose=True,
-    )
-
-    # model_dir = "/data/models/huggingface/meta-llama/Llama-2-7b-chat-hf"
-    # device = f'cuda:{torch.cuda.current_device()}' if torch.cuda.is_available() else 'cpu'
-    # bnb_config = transformers.BitsAndBytesConfig(
-    #     load_in_4bit=True,
-    #     bnb_4bit_quant_type='nf4',
-    #     bnb_4bit_use_double_quant=True,
-    #     bnb_4bit_compute_dtype=torch.bfloat16
+    # llm = LlamaCpp(
+    #     model_path="llama-2-7b-chat.Q6_K.gguf",
+    #     n_gpu_layers=n_gpu_layers,
+    #     n_batch=n_batch,
+    #     n_ctx=2048,
+    #     f16_kv=True, 
+    #     verbose=True,
     # )
 
-    # begin initializing HF items, you need an access token
-    # hf_auth = '<add your access token here>'
-    # model_config = transformers.AutoConfig.from_pretrained(
-    #     model_dir,
-    #     # use_auth_token=hf_auth
-    # )
 
-    # model = transformers.AutoModelForCausalLM.from_pretrained(
-    #     model_dir,
-    #     trust_remote_code=True,
-    #     config=model_config,
-    #     # quantization_config=bnb_config,
-    #     device_map='auto',
-    #     use_auth_token=hf_auth
-    # )
-    # model.eval()
-    
-    # tokenizer = transformers.AutoTokenizer.from_pretrained(
-    #     model_dir,
-    #     use_auth_token=hf_auth
-    # )
+    if not use_unlimiform:
+        model_dir = "meta-llama/Llama-2-7b-chat-hf"
+        hf_auth = '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'
+        model_config = transformers.AutoConfig.from_pretrained(
+            model_dir,
+            use_auth_token=hf_auth
+        )
 
-    # generate_text = transformers.pipeline(
-    #     model=model, 
-    #     tokenizer=tokenizer,
-    #     return_full_text=True,  # langchain expects the full text
-    #     task='text-generation',
-    #     # we pass model parameters here too
-    #     # stopping_criteria=stopping_criteria,  # without this model rambles during chat
-    #     temperature=0.1,  # 'randomness' of outputs, 0.0 is the min and 1.0 the max
-    #     max_new_tokens=512,  # max number of tokens to generate in the output
-    #     repetition_penalty=1.1  # without this output begins repeating
-    # )
+        model = transformers.AutoModelForCausalLM.from_pretrained(
+            model_dir,
+            trust_remote_code=True,
+            config=model_config,
+            device_map='auto',
+            use_auth_token=hf_auth
+        )
+        model.eval()
+        
+        tokenizer = transformers.AutoTokenizer.from_pretrained(
+            model_dir,
+            use_auth_token=hf_auth
+        )
 
-    # llm = HuggingFacePipeline(pipeline=generate_text)
+        generate_text = transformers.pipeline(
+            model=model, 
+            tokenizer=tokenizer,
+            return_full_text=True,  # langchain expects the full text
+            task='text-generation',
+            # we pass model parameters here too
+            # stopping_criteria=stopping_criteria,  # without this model rambles during chat
+            temperature=0.1,  # 'randomness' of outputs, 0.0 is the min and 1.0 the max
+            max_new_tokens=512,  # max number of tokens to generate in the output
+            repetition_penalty=1.1  # without this output begins repeating
+        )
 
+        llm = HuggingFacePipeline(pipeline=generate_text)
+    else:
+        model, tokenizer = unlimiform()
+
+
+        llm = transformers.pipeline(
+            model=model, 
+            tokenizer=tokenizer,
+            return_full_text=True,  # langchain expects the full text
+            task='text-generation',
+            temperature=0.1,
+            max_new_tokens=512,
+            repetition_penalty=1.1
+        )
 
 
 
@@ -298,7 +323,7 @@ def main():
     print(retriever.get_relevant_documents("What is buggy?"))
 
 
-    qa_chain = get_chain(retriever, llm,  custom_prompt=llama_prompt)
+    qa_chain = get_chain(retriever, generate(model, tokenizer),  custom_prompt=llama_prompt)
     questions = get_questions(in_file)
 
     

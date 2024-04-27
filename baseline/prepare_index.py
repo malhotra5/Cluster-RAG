@@ -8,37 +8,65 @@ import sys
 sys.path.insert(0, '../ColBERT/')
 from colbert import Indexer
 from colbert.infra import Run, RunConfig, ColBERTConfig
-
+import random
+import pickle as pkl
 
 vector_dbs = supported_models.vector_dbs
 
+def flatten_concatenation(matrix):
+    flat_list = []
+    for row in matrix:
+        flat_list += row
+    return flat_list
 
-def createDB(persistantName, embeddingFunction, splits, cluster=False, group=None):
-    if not cluster:
+def group_data(splits, cluster):
+    data_splits = []
+    if cluster["cluster_groups"] == None:
+        cluster_num = cluster["cluster_num"]
+        [data_splits.append([]) for _ in range(cluster_num)]
+        
+        all_docs = flatten_concatenation(splits)
+        random.shuffle(all_docs)
+        for i in range(cluster_num):
+            s = int(i/cluster_num * len(all_docs))
+            e = int((i+1)/cluster_num * len(all_docs))
+            data_splits[i].extend(all_docs[s:e])
+
+    else:
+        raise ValueError("Haven't implemented custom grouping yet")
+    
+
+    return data_splits
+
+
+
+def createDB(persistantName, embeddingFunction, splits, cluster, group=None):
+    if not cluster["cluster"]:
         for i in splits:
             vectorstore = Chroma.from_documents(documents=i, embedding=embeddingFunction, persist_directory=persistantName)
 
     else:
         checkpoint = 'colbert-ir/colbertv2.0'
-        for count, i in enumerate(splits):
+        data = group_data(splits, cluster)
+        for count, i in enumerate(data):
             all_documents = []
-            all_metadata = []
             for j in i:
                 all_documents.append(j.page_content)
-                all_metadata.append(j.metadata)
-            if count == 0:
-                continue 
-            # if __name__ == "__main__":
+
             with Run().context(RunConfig(nranks=1, experiment='notebook')):
                 config = ColBERTConfig(doc_maxlen=500, nbits=4, kmeans_niters=4) 
                 
                 cluster_name = "{}/{}/cluster_{}/".format(os.getcwd(), persistantName, count)                                                           
                 indexer = Indexer(checkpoint=checkpoint, config=config)
                 indexer.index(name=cluster_name, collection=all_documents, overwrite=True)
+            with open(cluster_name + "data.pkl", 'wb') as f:
+                pkl.dump(all_documents, f)
 
 
 
-def create_vector_db(dbname, datapath, custom_name=None, overwrite=False, cluster=False, gpu=True):
+
+
+def create_vector_db(dbname, datapath, cluster, custom_name=None, overwrite=False, gpu=True):
 
     if not os.path.exists("indexes"):
         os.mkdir("indexes")
@@ -145,6 +173,8 @@ def main():
     custom_name = args.custom_name
     overwrite = args.overwrite
     cluster = args.cluster
+    cluster_groups = args.groups
+    cluster_num = args.num_clusters
     gpu = args.gpu
     
 
@@ -155,7 +185,14 @@ def main():
         raise ValueError("Invalid path to documents detected: {}".format(data_path))
 
 
-    create_vector_db(vector_db, data_path, custom_name=custom_name, overwrite=overwrite, cluster=cluster, gpu=gpu)
+    create_vector_db(vector_db, 
+                     data_path, 
+                     cluster={"cluster": cluster,
+                              "cluster_groups": cluster_groups,
+                              "cluster_num": cluster_num}, 
+                     custom_name=custom_name, 
+                     overwrite=overwrite,
+                     gpu=gpu)
 
     print("Finished creating dataset")
 

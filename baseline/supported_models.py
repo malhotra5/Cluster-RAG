@@ -5,7 +5,12 @@ from langchain_community.embeddings.sentence_transformer import (
 )        
 from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer, AutoModel
-
+import sys
+sys.path.insert(0, '../ColBERT/')
+from colbert.infra import Run, RunConfig
+from colbert import Searcher
+import pickle as pkl
+import os
 
 vector_dbs = ["llm_embed", "miniLM", "sfr_mistral", "gpt4all", "colbert"]
 
@@ -73,3 +78,19 @@ def get_rerank_model(name):
         raise ValueError("Current {} model is not supported for reranking; please add to supported_models.py".format(name))
 
     return model
+
+
+def get_cluster_model(name):
+    indexes = []
+    paths = os.listdir("indexes/" + name)
+    for i in paths:
+        
+        with open("indexes/{}/{}/data.pkl".format(name, i), 'rb') as f:
+            data = pkl.load(f)
+
+        with Run().context(RunConfig(experiment='notebook')):
+            searcher = Searcher(index="{}/indexes/{}/{}".format(os.getcwd(),name, i), collection=data)
+            indexes.append(searcher)
+
+    return indexes
+
