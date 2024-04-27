@@ -268,10 +268,9 @@ def main():
 
     if not use_unlimiform:
         model_dir = "meta-llama/Llama-2-7b-chat-hf"
-        hf_auth = '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'
         model_config = transformers.AutoConfig.from_pretrained(
             model_dir,
-            use_auth_token=hf_auth
+            # use_auth_token=hf_auth
         )
 
         model = transformers.AutoModelForCausalLM.from_pretrained(
@@ -279,13 +278,13 @@ def main():
             trust_remote_code=True,
             config=model_config,
             device_map='auto',
-            use_auth_token=hf_auth
+            # use_auth_token=hf_auth
         )
         model.eval()
         
         tokenizer = transformers.AutoTokenizer.from_pretrained(
             model_dir,
-            use_auth_token=hf_auth
+            # use_auth_token=hf_auth
         )
 
         generate_text = transformers.pipeline(
