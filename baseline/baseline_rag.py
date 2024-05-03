@@ -19,8 +19,8 @@ from transformers import LogitsProcessor
 from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
 import torch
 import sys
-sys.path.insert(0, '../unlimiformer/src')
-from run_generation import unlimiform, generate
+sys.path.insert(0, 'unlimiformer/src')
+from api_run_gen import unlimiform, generate
 # from colbert import Searcher
 
 
@@ -315,14 +315,14 @@ def main():
         )
 
 
-
+    g = generate(model, tokenizer)   
 
     retriever = get_retriever(model_type, vector_db, llm)
     print("Running retiever test on query 'What is buggy?")
     print(retriever.get_relevant_documents("What is buggy?"))
 
 
-    qa_chain = get_chain(retriever, generate(model, tokenizer),  custom_prompt=llama_prompt)
+    qa_chain = get_chain(retriever, g ,  custom_prompt=llama_prompt)
     questions = get_questions(in_file)
 
     
@@ -338,7 +338,7 @@ def main():
         response = qa_chain.invoke(questions[i])
 
         f = open(out_file, "a")
-        f.write(response + "\n")
+        f.write(response.replace("\n","") + "\n")
         f.close()
         answers.append(response)
 

@@ -3,7 +3,8 @@ from langchain_community.embeddings import GPT4AllEmbeddings
 from langchain_community.embeddings.sentence_transformer import (
     SentenceTransformerEmbeddings,
 )        
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer
+from transformers import pipeline
 from transformers import AutoTokenizer, AutoModel
 import sys
 sys.path.insert(0, '../ColBERT/')
@@ -39,7 +40,8 @@ def get_colbert():
 
 
 def get_bge_rerank():
-    rerank_model = SentenceTransformer('BAAI/bge-reranker-base')
+    # rerank_model = SentenceTransformer('BAAI/bge-reranker-base')
+    rerank_model = pipeline("text-classification", model="BAAI/bge-reranker-base")
     return rerank_model
 
 
